@@ -493,16 +493,30 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const provider=new GoogleAuthProvider();
 let allUsers=[];
 
-getRedirectResult(auth).catch(e=>{ if(e.code!=='auth/no-auth-event') console.warn(e.code); });
+// 리다이렉트 결과를 먼저 처리한 뒤 onAuthStateChanged 실행
+async function initAuth() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      console.log('리다이렉트 로그인 성공:', result.user.email);
+    }
+  } catch(e) {
+    if (e.code !== 'auth/no-auth-event') console.warn('redirect err:', e.code);
+  }
 
-onAuthStateChanged(auth, async user=>{
-  if (user) {
-    window._currentUid=user.uid;
-    const snap=await getDoc(doc(db,"users",user.uid));
-    if (!snap.exists()) goTo('s-nickname');
-    else showHome(snap.data(), user.uid);
-  } else { window._currentUid=null; goTo('s-login'); }
-});
+  onAuthStateChanged(auth, async user => {
+    if (user) {
+      window._currentUid = user.uid;
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (!snap.exists()) goTo('s-nickname');
+      else showHome(snap.data(), user.uid);
+    } else {
+      window._currentUid = null;
+      goTo('s-login');
+    }
+  });
+}
+initAuth();
 
 window.signInWithGoogle=async()=>{
   try { await signInWithRedirect(auth, provider); }
