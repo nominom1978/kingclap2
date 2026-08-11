@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MVIP</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #111; }
+.screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 360px; }
+.screen.active { display: flex; }
+.logo { font-size: 11px; letter-spacing: 5px; color: #bbb; margin-bottom: 48px; font-weight: 500; text-transform: uppercase; }
+.btn-primary { width: 100%; background: #111; color: #fff; border: none; border-radius: 14px; padding: 17px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-bottom: 12px; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+.back-link { font-size: 12px; color: #ccc; cursor: pointer; background: none; border: none; font-family: inherit; margin-top: 14px; }
+.back-link:hover { color: #999; }
+/* 로그인 */
+.login-hero { text-align: center; margin-bottom: 48px; }
+.login-emoji { font-size: 56px; margin-bottom: 16px; }
+.login-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.login-sub { font-size: 14px; color: #bbb; line-height: 1.6; }
+.google-btn { width: 100%; background: #fff; color: #111; border: 1.5px solid #e8e8e8; border-radius: 14px; padding: 16px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; margin-bottom: 12px; }
+.google-btn:hover { border-color: #111; }
+/* 닉네임 */
+.nick-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+.nick-sub { font-size: 13px; color: #bbb; margin-bottom: 36px; text-align: center; line-height: 1.6; }
+.text-input { width: 100%; background: #fff; border: 1.5px solid #e8e8e8; border-radius: 14px; padding: 16px 18px; font-size: 17px; font-weight: 600; color: #111; font-family: inherit; outline: none; text-align: center; transition: border-color 0.2s; margin-bottom: 14px; }
+.text-input:focus { border-color: #111; }
+.text-input::placeholder { color: #ddd; font-weight: 400; font-size: 15px; }
+/* 홈 */
+.home-greeting { font-size: 13px; color: #bbb; letter-spacing: 1px; margin-bottom: 6px; text-align: center; }
+.home-nickname { font-size: 26px; font-weight: 700; margin-bottom: 24px; text-align: center; }
+.home-cards { display: flex; gap: 10px; width: 100%; margin-bottom: 14px; }
+.home-card { flex: 1; background: #f8f8f8; border-radius: 16px; padding: 18px 12px; text-align: center; }
+.home-card-label { font-size: 10px; color: #bbb; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+.home-card-num { font-size: 36px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.home-card-unit { font-size: 11px; color: #bbb; margin-top: 4px; }
+.home-card.received .home-card-num { color: #534AB7; }
+.value-card { width: 100%; background: #0d0d0d; border-radius: 16px; padding: 20px 22px; margin-bottom: 14px; text-align: center; }
+.value-label { font-size: 10px; color: #555; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
+.value-amount { font-size: 32px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -1px; }
+.value-unit { font-size: 12px; color: #444; margin-top: 6px; }
+.value-sub { font-size: 11px; color: #444; margin-top: 4px; }
+.daily-badge { width: 100%; background: #f8f8f8; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.daily-label { font-size: 12px; color: #999; }
+.daily-dots { display: flex; gap: 5px; }
+.daily-dot { width: 10px; height: 10px; border-radius: 50%; background: #111; }
+.daily-dot.used { background: #e8e8e8; }
+.home-logout { font-size: 11px; color: #ddd; cursor: pointer; background: none; border: none; font-family: inherit; margin-top: 14px; }
+.home-logout:hover { color: #bbb; }
+/* 박수 */
+.clap-emoji-btn { font-size: 100px; background: none; border: none; cursor: pointer; line-height: 1; margin-bottom: 24px; transition: transform 0.08s; user-select: none; display: block; }
+.clap-emoji-btn:active { transform: scale(0.82); }
+.clap-emoji-btn.pulse { animation: cp 0.14s ease-out; }
+@keyframes cp { 0%{transform:scale(1)} 35%{transform:scale(0.80)} 100%{transform:scale(1)} }
+.clap-count { font-size: 88px; font-weight: 700; line-height: 1; margin-bottom: 8px; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
+.clap-unit { font-size: 14px; color: #bbb; letter-spacing: 2px; margin-bottom: 16px; }
+.clap-daily { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+.clap-daily-text { font-size: 12px; color: #bbb; }
+.clap-daily-dots { display: flex; gap: 4px; }
+.clap-daily-dot { width: 8px; height: 8px; border-radius: 50%; background: #111; }
+.clap-daily-dot.used { background: #e8e8e8; }
+.mic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; width: 100%; }
+.mic-btn { background: none; border: 1px solid #e8e8e8; border-radius: 24px; padding: 7px 16px; font-size: 12px; color: #bbb; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px; transition: all 0.2s; white-space: nowrap; }
+.mic-btn.on { border-color: #111; color: #111; }
+.vol-wrap { flex: 1; height: 2px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
+.vol-fill { height: 100%; background: #111; width: 0%; transition: width 0.05s; border-radius: 2px; }
+.mic-hint { font-size: 11px; color: #ccc; margin-bottom: 28px; text-align: center; min-height: 16px; }
+.mic-hint.on { color: #111; }
+.reset-link { margin-top: 14px; font-size: 12px; color: #ccc; cursor: pointer; background: none; border: none; font-family: inherit; }
+/* 계산 */
+.calc-title { font-size: 13px; color: #bbb; letter-spacing: 2px; margin-bottom: 16px; text-align: center; }
+.calc-summary { width: 100%; background: #f8f8f8; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+.calc-summary-label { font-size: 13px; color: #999; }
+.calc-summary-val { font-size: 22px; font-weight: 700; }
+.input-label { font-size: 12px; color: #bbb; letter-spacing: 1px; margin-bottom: 6px; align-self: flex-start; }
+.input-sub { font-size: 11px; color: #ccc; margin-bottom: 12px; align-self: flex-start; line-height: 1.5; }
+.amount-input { width: 100%; background: #fff; border: 1.5px solid #e8e8e8; border-radius: 14px; padding: 16px 18px; font-size: 24px; font-weight: 600; color: #111; font-family: inherit; outline: none; text-align: center; transition: border-color 0.2s; margin-bottom: 6px; }
+.amount-input:focus { border-color: #111; }
+.amount-input::placeholder { color: #ddd; font-size: 18px; font-weight: 400; }
+.amount-range { font-size: 11px; color: #ccc; text-align: center; margin-bottom: 4px; }
+.amount-error { font-size: 12px; color: #d63a3a; text-align: center; margin-bottom: 4px; min-height: 18px; }
+.amount-preview { font-size: 13px; color: #534AB7; font-weight: 600; text-align: center; margin-bottom: 16px; min-height: 20px; }
+/* 결과 */
+.result-label { font-size: 13px; color: #bbb; letter-spacing: 2px; margin-bottom: 20px; }
+.result-amount { font-size: 52px; font-weight: 700; margin-bottom: 8px; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.result-unit { font-size: 14px; color: #bbb; margin-bottom: 32px; letter-spacing: 1px; }
+.result-breakdown { width: 100%; background: #f8f8f8; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px; }
+.breakdown-row { display: flex; justify-content: space-between; font-size: 13px; color: #999; margin-bottom: 8px; }
+.breakdown-row:last-child { margin-bottom: 0; color: #111; font-weight: 600; font-size: 14px; }
+.breakdown-row span:last-child { color: #111; }
+/* 받는 사람 */
+.recv-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+.recv-sub { font-size: 13px; color: #bbb; margin-bottom: 20px; text-align: center; line-height: 1.5; }
+.search-input { width: 100%; background: #f8f8f8; border: 1.5px solid #f0f0f0; border-radius: 12px; padding: 12px 16px; font-size: 14px; color: #111; font-family: inherit; outline: none; margin-bottom: 12px; transition: border-color 0.2s; }
+.search-input:focus { border-color: #111; background: #fff; }
+.search-input::placeholder { color: #ccc; }
+.user-list { width: 100%; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.user-item { width: 100%; background: #f8f8f8; border: 1.5px solid #f0f0f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.15s; text-align: left; font-family: inherit; }
+.user-item:hover { border-color: #111; background: #fff; }
+.user-item.selected { border-color: #534AB7; background: #EEEDFE; }
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #534AB7; flex-shrink: 0; }
+.user-nick { font-size: 15px; font-weight: 600; }
+.user-recv { font-size: 11px; color: #bbb; margin-top: 2px; }
+.user-value { font-size: 11px; color: #534AB7; margin-top: 1px; font-weight: 500; }
+.user-list-empty { font-size: 13px; color: #ccc; text-align: center; padding: 24px 0; }
+/* 완료 */
+.done-icon { font-size: 64px; margin-bottom: 24px; animation: pop 0.5s ease-out; }
+@keyframes pop { 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
+.done-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+.done-sub { font-size: 14px; color: #bbb; line-height: 1.7; text-align: center; margin-bottom: 24px; }
+.done-to { font-size: 13px; color: #534AB7; font-weight: 600; margin-bottom: 4px; }
+.done-claps { font-size: 14px; color: #999; margin-bottom: 4px; }
+.done-amount { font-size: 36px; font-weight: 700; margin-bottom: 4px; }
+.done-amount-label { font-size: 12px; color: #bbb; margin-bottom: 32px; }
+.loading { font-size: 13px; color: #bbb; letter-spacing: 1px; }
+.particle { position: fixed; pointer-events: none; font-size: 28px; animation: fp 1s ease-out forwards; z-index: 9999; }
+@keyframes fp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-130px) scale(1.7)} }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="s-loading"><div class="logo">MVIP</div><div class="loading">잠시만요...</div></div>
+
+<div class="screen" id="s-login">
+  <div class="logo">MVIP</div>
+  <div class="login-hero">
+    <div class="login-emoji">👏</div>
+    <div class="login-title">선한 사람이 빛나는 세상</div>
+    <div class="login-sub">박수로 가치를 전달하세요.<br>MVIP와 함께 시작해요.</div>
+  </div>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Google로 시작하기
+  </button>
+</div>
+
+<div class="screen" id="s-nickname">
+  <div class="logo">MVIP</div>
+  <div class="nick-title">나만의 이름을 정해요</div>
+  <div class="nick-sub">앱 안에서 사용할 닉네임이에요.<br>한번 정하면 고유한 아이디가 돼요.</div>
+  <input class="text-input" id="nick-input" type="text" placeholder="닉네임 입력" maxlength="12" />
+  <button class="btn-primary" onclick="saveNickname()">시작하기 ✦</button>
+</div>
+
+<div class="screen" id="s-home">
+  <div class="logo">MVIP</div>
+  <div class="home-greeting">안녕하세요</div>
+  <div class="home-nickname" id="home-nickname">—</div>
+  <div class="home-cards">
+    <div class="home-card"><div class="home-card-label">👏 보낸 박수</div><div class="home-card-num" id="home-sent">0</div><div class="home-card-unit">CLAPS</div></div>
+    <div class="home-card received"><div class="home-card-label">✦ 받은 박수</div><div class="home-card-num" id="home-received">0</div><div class="home-card-unit">CLAPS</div></div>
+  </div>
+  <div class="value-card">
+    <div class="value-label">✦ 내가 받은 박수의 가치</div>
+    <div class="value-amount" id="home-value">0</div>
+    <div class="value-unit">원</div>
+    <div class="value-sub" id="home-value-sub">아직 받은 박수가 없어요</div>
+  </div>
+  <div class="daily-badge">
+    <span class="daily-label">오늘 남은 박수</span>
+    <div class="daily-dots" id="home-daily-dots"></div>
+  </div>
+  <button class="btn-primary" id="home-clap-btn" onclick="goTo('s-clap')">박수 보내기 👏</button>
+  <button class="home-logout" onclick="doLogout()">로그아웃</button>
+</div>
+
+<div class="screen" id="s-clap">
+  <div class="logo">MVIP</div>
+  <button class="clap-emoji-btn" id="clap-btn" onclick="doClap(event)">👏</button>
+  <div class="clap-count" id="clap-num">0</div>
+  <div class="clap-unit">CLAPS</div>
+  <div class="clap-daily"><span class="clap-daily-text">오늘 남은 박수</span><div class="clap-daily-dots" id="clap-daily-dots"></div></div>
+  <div class="mic-row">
+    <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎙️ 마이크</button>
+    <div class="vol-wrap"><div class="vol-fill" id="vol-fill"></div></div>
+  </div>
+  <div class="mic-hint" id="mic-hint">마이크로 실제 박수를 감지해요</div>
+  <button class="btn-primary" onclick="goCalc()">Calculate</button>
+  <button class="reset-link" onclick="resetClap()">처음부터 다시</button>
+  <button class="back-link" onclick="goTo('s-home')">← 홈으로</button>
+</div>
+
+<div class="screen" id="s-calc">
+  <div class="logo">MVIP</div>
+  <div class="calc-title">CALCULATE</div>
+  <div class="calc-summary"><span class="calc-summary-label">총 박수</span><span class="calc-summary-val"><span id="calc-count">0</span>번</span></div>
+  <div class="input-label">박수 1회의 가치는?</div>
+  <div class="input-sub">100원 ~ 1,000원 사이로 입력해주세요.<br>실제 결제가 아닌 마음의 가치예요.</div>
+  <input class="amount-input" id="amount-input" type="number" placeholder="100 ~ 1,000" inputmode="numeric"
+    oninput="previewAmount(this.value)" onkeydown="if(event.key==='Enter') calcResult()" />
+  <div class="amount-range">최소 100원 · 최대 1,000원</div>
+  <div class="amount-error" id="amount-error"></div>
+  <div class="amount-preview" id="amount-preview"></div>
+  <button class="btn-primary" onclick="calcResult()">Enter</button>
+  <button class="back-link" onclick="goTo('s-clap')">← 돌아가기</button>
+</div>
+
+<div class="screen" id="s-result">
+  <div class="logo">MVIP</div>
+  <div class="result-label">MY CLAP VALUE</div>
+  <div class="result-amount" id="result-amount">0</div>
+  <div class="result-unit">원의 가치</div>
+  <div class="result-breakdown">
+    <div class="breakdown-row"><span>박수 횟수</span><span id="bd-count">0번</span></div>
+    <div class="breakdown-row"><span>1회 가치</span><span id="bd-per">0원</span></div>
+    <div class="breakdown-row"><span>총 가치</span><span id="bd-total">0원</span></div>
+  </div>
+  <button class="btn-primary" onclick="goSelectUser()">누구에게 보낼까요? →</button>
+  <button class="back-link" onclick="goTo('s-calc')">← 금액 수정</button>
+</div>
+
+<div class="screen" id="s-select">
+  <div class="logo">MVIP</div>
+  <div class="recv-title">누구에게 보낼까요?</div>
+  <div class="recv-sub" id="select-sub">박수를 받을 사람을 선택해주세요</div>
+  <input class="search-input" id="search-input" type="text" placeholder="닉네임 검색" oninput="filterUsers(this.value)" />
+  <div class="user-list" id="user-list"><div class="user-list-empty">불러오는 중...</div></div>
+  <button class="btn-primary" id="send-confirm-btn" onclick="confirmSend()" style="opacity:0.3;pointer-events:none;">선택 후 전송</button>
+  <button class="back-link" onclick="goTo('s-result')">← 돌아가기</button>
+</div>
+
+<div class="screen" id="s-done">
+  <div class="done-icon">✅</div>
+  <div class="done-title">전송 완료!</div>
+  <div class="done-sub">박수의 가치가 전달됐어요.<br>선한 행동이 빛나는 세상,<br>MVIP와 함께해요.</div>
+  <div class="done-to" id="done-to"></div>
+  <div class="done-claps" id="done-claps"></div>
+  <div class="done-amount" id="done-amount"></div>
+  <div class="done-amount-label">의 가치를 전달했어요</div>
+  <button class="btn-primary" onclick="goTo('s-home')">홈으로 👏</button>
+</div>
+
+<!-- ① 전역 상수 & 유틸 (모든 스크립트에서 공유) -->
+<script>
+const DAILY_MAX = 10;
+const MIN_VAL   = 100;
+const MAX_VAL   = 1000;
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+function getTodayUsed(uid) {
+  const key = 'mvip_daily_' + (uid || 'x') + '_' + todayKey();
+  return parseInt(localStorage.getItem(key) || '0');
+}
+function addTodayUsed(uid, n) {
+  const key = 'mvip_daily_' + uid + '_' + todayKey();
+  localStorage.setItem(key, (getTodayUsed(uid) + n).toString());
+}
+
+function renderDailyDots(containerId, uid) {
+  const used      = getTodayUsed(uid);
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const cls = containerId.startsWith('home') ? 'daily-dot' : 'clap-daily-dot';
+  container.innerHTML = Array.from({length: DAILY_MAX}, (_, i) =>
+    `<div class="${cls}${i < used ? ' used' : ''}"></div>`
+  ).join('');
+}
+
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id !== 's-clap') stopMic();
+  if (id === 's-clap' && window._currentUid) {
+    renderDailyDots('clap-daily-dots', window._currentUid);
+    const used = getTodayUsed(window._currentUid);
+    const btn  = document.getElementById('clap-btn');
+    const hint = document.getElementById('mic-hint');
+    if (used >= DAILY_MAX) {
+      btn.style.opacity = '0.3'; btn.style.pointerEvents = 'none';
+      hint.innerText = '오늘 박수를 모두 사용했어요';
+    } else {
+      btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+      hint.innerText = '마이크로 실제 박수를 감지해요';
+      hint.className = 'mic-hint';
+    }
+  }
+}
+
+function spawnParticle(e) {
+  const p = document.createElement('div');
+  p.className = 'particle'; p.innerText = '👏';
+  p.style.left = ((e&&e.clientX?e.clientX:window.innerWidth/2)-18)+'px';
+  p.style.top  = ((e&&e.clientY?e.clientY:window.innerHeight/2)-18)+'px';
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 1050);
+}
+</script>
+
+<!-- ② Firebase (module) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_8g8S_z-lPKmeX_7jjuuu9CXIQC_0tcY",
+  authDomain: "mvip-5057b.firebaseapp.com",
+  projectId: "mvip-5057b",
+  storageBucket: "mvip-5057b.firebasestorage.app",
+  messagingSenderId: "227982637913",
+  appId: "1:227982637913:web:03b70bea1caff1fb56ea48"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+let allUsers = [];
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    window._currentUid = user.uid;
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists()) { goTo('s-nickname'); }
+    else { showHome(snap.data(), user.uid); }
+  } else {
+    window._currentUid = null;
+    goTo('s-login');
+  }
+});
+
+window.signInWithGoogle = async () => {
+  try { await signInWithPopup(auth, provider); }
+  catch(e) { alert('로그인 실패: ' + e.message); }
+};
+
+window.saveNickname = async () => {
+  const nick = document.getElementById('nick-input').value.trim();
+  if (!nick || !window._currentUid) return;
+  const data = { nickname: nick, email: auth.currentUser.email, sentClaps:0, receivedClaps:0, receivedValue:0, createdAt: new Date().toISOString() };
+  await setDoc(doc(db, "users", window._currentUid), data);
+  showHome(data, window._currentUid);
+};
+
+function showHome(d, uid) {
+  document.getElementById('home-nickname').innerText = d.nickname;
+  document.getElementById('home-sent').innerText = (d.sentClaps||0).toLocaleString('ko-KR');
+  document.getElementById('home-received').innerText = (d.receivedClaps||0).toLocaleString('ko-KR');
+  const val = d.receivedValue || 0;
+  document.getElementById('home-value').innerText = val.toLocaleString('ko-KR');
+  document.getElementById('home-value-sub').innerText = val > 0 ? `${d.receivedClaps||0}번의 박수가 만든 가치` : '아직 받은 박수가 없어요';
+  renderDailyDots('home-daily-dots', uid);
+  const used = getTodayUsed(uid);
+  const homeBtn = document.getElementById('home-clap-btn');
+  homeBtn.disabled = used >= DAILY_MAX;
+  homeBtn.innerText = used >= DAILY_MAX ? '오늘 박수를 모두 사용했어요' : '박수 보내기 👏';
+  goTo('s-home');
+}
+
+window.doLogout = async () => { await signOut(auth); };
+
+window.loadUsers = async () => {
+  const snap = await getDocs(collection(db, "users"));
+  allUsers = [];
+  snap.forEach(d => { if (d.id !== window._currentUid) allUsers.push({uid:d.id,...d.data()}); });
+  renderUserList(allUsers);
+};
+
+function renderUserList(users) {
+  const list = document.getElementById('user-list');
+  if (!users.length) { list.innerHTML = '<div class="user-list-empty">아직 다른 멤버가 없어요</div>'; return; }
+  list.innerHTML = users.map(u => `
+    <button class="user-item" onclick="selectUser('${u.uid}','${u.nickname}',event)">
+      <div class="user-avatar">${u.nickname.charAt(0)}</div>
+      <div>
+        <div class="user-nick">${u.nickname}</div>
+        <div class="user-recv">받은 박수 ${(u.receivedClaps||0).toLocaleString('ko-KR')}번</div>
+        <div class="user-value">받은 가치 ${(u.receivedValue||0).toLocaleString('ko-KR')}원</div>
+      </div>
+    </button>`).join('');
+}
+
+window.filterUsers = q => { renderUserList(allUsers.filter(u => u.nickname.includes(q))); resetSelectBtn(); };
+
+window.selectUser = (uid, nick, e) => {
+  window._selUid = uid; window._selNick = nick;
+  document.querySelectorAll('.user-item').forEach(el => el.classList.remove('selected'));
+  e.currentTarget.classList.add('selected');
+  const btn = document.getElementById('send-confirm-btn');
+  btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+  btn.innerText = `${nick}에게 전송 👏`;
+};
+
+function resetSelectBtn() {
+  window._selUid = null; window._selNick = null;
+  const btn = document.getElementById('send-confirm-btn');
+  btn.style.opacity = '0.3'; btn.style.pointerEvents = 'none';
+  btn.innerText = '선택 후 전송';
+}
+
+window.confirmSend = async () => {
+  if (!window._selUid || !window._currentUid) return;
+  const claps = window._pendingClaps || 0;
+  const total = window._pendingTotal || 0;
+  await updateDoc(doc(db, "users", window._currentUid), { sentClaps: increment(claps) });
+  await updateDoc(doc(db, "users", window._selUid), { receivedClaps: increment(claps), receivedValue: increment(total) });
+  addTodayUsed(window._currentUid, claps);
+  const mySnap = await getDoc(doc(db, "users", window._currentUid));
+  document.getElementById('done-to').innerText = `👉 ${window._selNick}에게`;
+  document.getElementById('done-claps').innerText = `박수 ${claps}번`;
+  document.getElementById('done-amount').innerText = total.toLocaleString('ko-KR') + '원';
+  showHome(mySnap.data(), window._currentUid);
+  goTo('s-done');
+  window._pendingClaps = 0; window._pendingTotal = 0;
+  window._count = 0; document.getElementById('clap-num').innerText = 0;
+  setTimeout(() => { for(let i=0;i<6;i++) setTimeout(()=>spawnParticle({clientX:Math.random()*window.innerWidth,clientY:Math.random()*window.innerHeight*0.6}),i*150); }, 200);
+};
+
+window.goSelectUser = () => {
+  const total = window._pendingTotal || 0;
+  document.getElementById('select-sub').innerText = `${total.toLocaleString('ko-KR')}원의 가치를 보낼 사람을 선택해주세요`;
+  document.getElementById('search-input').value = '';
+  document.getElementById('user-list').innerHTML = '<div class="user-list-empty">불러오는 중...</div>';
+  resetSelectBtn();
+  goTo('s-select');
+  window.loadUsers();
+};
+</script>
+
+<!-- ③ 박수/마이크/흔들기 로직 -->
+<script>
+window._count = 0;
+
+window.doClap = function(e) {
+  const uid  = window._currentUid;
+  const used = getTodayUsed(uid);
+  if (used + window._count >= DAILY_MAX) {
+    const btn = document.getElementById('clap-btn');
+    btn.style.transform = 'scale(0.95)';
+    setTimeout(() => btn.style.transform = '', 200);
+    document.getElementById('mic-hint').innerText = `오늘은 최대 ${DAILY_MAX}번까지예요`;
+    return;
+  }
+  window._count++;
+  document.getElementById('clap-num').innerText = window._count;
+  renderDailyDots('clap-daily-dots', uid);
+  const b = document.getElementById('clap-btn');
+  b.classList.remove('pulse'); void b.offsetWidth; b.classList.add('pulse');
+  spawnParticle(e);
+};
+
+window.resetClap = function() {
+  window._count = 0;
+  document.getElementById('clap-num').innerText = 0;
+  renderDailyDots('clap-daily-dots', window._currentUid);
+};
+
+window.goCalc = function() {
+  if (window._count === 0) return;
+  document.getElementById('calc-count').innerText = window._count;
+  document.getElementById('amount-input').value = '';
+  document.getElementById('amount-error').innerText = '';
+  document.getElementById('amount-preview').innerText = '';
+  goTo('s-calc');
+  setTimeout(() => document.getElementById('amount-input').focus(), 300);
+};
+
+window.previewAmount = function(val) {
+  const v   = parseInt(val);
+  const err = document.getElementById('amount-error');
+  const pre = document.getElementById('amount-preview');
+  if (!v || v <= 0) { err.innerText = ''; pre.innerText = ''; return; }
+  if (v < MIN_VAL)  { err.innerText = `최소 ${MIN_VAL}원이에요`; pre.innerText = ''; return; }
+  if (v > MAX_VAL)  { err.innerText = `최대 ${MAX_VAL.toLocaleString('ko-KR')}원이에요`; pre.innerText = ''; return; }
+  err.innerText = '';
+  pre.innerText = `총 ${window._count}번 × ${v.toLocaleString('ko-KR')}원 = ${(window._count*v).toLocaleString('ko-KR')}원의 가치`;
+};
+
+window.calcResult = function() {
+  const val = parseInt(document.getElementById('amount-input').value);
+  const err = document.getElementById('amount-error');
+  if (!val || val < MIN_VAL || val > MAX_VAL) {
+    err.innerText = `${MIN_VAL}원 ~ ${MAX_VAL.toLocaleString('ko-KR')}원 사이로 입력해주세요`;
+    document.getElementById('amount-input').focus(); return;
+  }
+  const total = window._count * val;
+  document.getElementById('result-amount').innerText = total.toLocaleString('ko-KR');
+  document.getElementById('bd-count').innerText = window._count + '번';
+  document.getElementById('bd-per').innerText = val.toLocaleString('ko-KR') + '원';
+  document.getElementById('bd-total').innerText = total.toLocaleString('ko-KR') + '원';
+  window._pendingClaps = window._count;
+  window._pendingTotal = total;
+  goTo('s-result');
+};
+
+// 흔들기
+let lastAcc = null, lastShakeT = 0;
+window.addEventListener('devicemotion', e => {
+  const a = e.accelerationIncludingGravity; if (!a) return;
+  if (lastAcc) {
+    const d = Math.abs(a.x-lastAcc.x)+Math.abs(a.y-lastAcc.y)+Math.abs(a.z-lastAcc.z);
+    const now = Date.now();
+    if (d > 22 && now-lastShakeT > 350 && document.getElementById('s-clap').classList.contains('active')) {
+      lastShakeT = now;
+      window.doClap({clientX:window.innerWidth/2,clientY:window.innerHeight/2});
+    }
+  }
+  lastAcc = a;
+});
+
+// 마이크 — 정밀 박수 감지
+let audioCtx, analyser, micStream, micOn=false, rafId, lastClapT=0, prevEnergy=0, silentFrames=0, aboveFrames=0;
+const MIC_COOLDOWN=600, MIC_THRESHOLD=72, RISE_RATIO=3.5, SILENCE_MIN=4, MAX_SUSTAINED=6;
+
+window.toggleMic = function() { micOn ? stopMic() : startMic(); };
+
+async function startMic() {
+  const hint=document.getElementById('mic-hint'), btn=document.getElementById('mic-btn');
+  try {
+    hint.innerText='권한 요청 중...'; hint.className='mic-hint';
+    micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    audioCtx  = new (window.AudioContext||window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(micStream);
+    analyser  = audioCtx.createAnalyser();
+    analyser.fftSize=2048; analyser.smoothingTimeConstant=0.05;
+    src.connect(analyser);
+    micOn=true; prevEnergy=0; silentFrames=0; aboveFrames=0;
+    btn.classList.add('on'); btn.innerText='🎙️ 감지 중';
+    hint.innerText='박수를 쳐보세요!'; hint.className='mic-hint on';
+    listenLoop();
+  } catch { hint.innerText='마이크 권한을 허용해주세요'; hint.className='mic-hint'; }
+}
+
+function listenLoop() {
+  if (!micOn) return;
+  const freq = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(freq);
+  const binHz    = audioCtx.sampleRate / analyser.fftSize;
+  const lo       = Math.floor(1000/binHz), hi = Math.floor(8000/binHz);
+  const band     = freq.slice(lo, hi);
+  const energy   = band.reduce((a,b)=>a+b,0)/band.length;
+  const hiband   = freq.slice(Math.floor(4000/binHz), hi);
+  const hiEnergy = hiband.reduce((a,b)=>a+b,0)/hiband.length;
+  const hiRatio  = energy > 0 ? hiEnergy/energy : 0;
+  document.getElementById('vol-fill').style.width = Math.min(energy*1.5,100)+'%';
+  const now = Date.now();
+  if (energy > MIC_THRESHOLD &&
+      (prevEnergy < 8 || (energy/(prevEnergy+1)) > RISE_RATIO) &&
+      silentFrames >= SILENCE_MIN &&
+      now - lastClapT > MIC_COOLDOWN &&
+      aboveFrames < MAX_SUSTAINED &&
+      hiRatio > 0.55) {
+    lastClapT=now; silentFrames=0; aboveFrames=0;
+    window.doClap({clientX:window.innerWidth/2,clientY:window.innerHeight/2});
+  }
+  aboveFrames  = energy > MIC_THRESHOLD ? aboveFrames+1 : 0;
+  silentFrames = energy < 15 ? silentFrames+1 : (energy <= MIC_THRESHOLD ? Math.max(0,silentFrames-1) : silentFrames);
+  prevEnergy   = energy;
+  rafId = requestAnimationFrame(listenLoop);
+}
+
+function stopMic() {
+  micOn=false;
+  if(rafId) cancelAnimationFrame(rafId);
+  if(micStream) micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx){audioCtx.close();audioCtx=null;}
+  document.getElementById('vol-fill').style.width='0%';
+  document.getElementById('mic-btn').classList.remove('on');
+  document.getElementById('mic-btn').innerText='🎙️ 마이크';
+  document.getElementById('mic-hint').innerText='마이크로 실제 박수를 감지해요';
+  document.getElementById('mic-hint').className='mic-hint';
+}
+</script>
+</body>
+</html>
