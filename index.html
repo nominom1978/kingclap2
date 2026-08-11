@@ -293,7 +293,7 @@ function spawnParticle(e) {
 <!-- ② Firebase (module) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -325,9 +325,18 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+// 리다이렉트 결과 처리 (모바일 복귀 시)
+getRedirectResult(auth).catch(e => console.warn('redirect result:', e));
+
 window.signInWithGoogle = async () => {
-  try { await signInWithPopup(auth, provider); }
-  catch(e) { alert('로그인 실패: ' + e.message); }
+  try {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await signInWithPopup(auth, provider);
+    }
+  } catch(e) { alert('로그인 실패: ' + e.message); }
 };
 
 window.saveNickname = async () => {
