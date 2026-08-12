@@ -493,30 +493,35 @@ const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app)
 const provider=new GoogleAuthProvider();
 let allUsers=[];
 
-// 리다이렉트 결과를 먼저 처리한 뒤 onAuthStateChanged 실행
-async function initAuth() {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result && result.user) {
-      console.log('리다이렉트 로그인 성공:', result.user.email);
-    }
-  } catch(e) {
-    if (e.code !== 'auth/no-auth-event') console.warn('redirect err:', e.code);
+// 로딩 타임아웃 — 3초 안에 응답 없으면 로그인 화면으로
+const authTimeout = setTimeout(() => {
+  if (document.getElementById('s-loading').classList.contains('active')) {
+    goTo('s-login');
   }
+}, 3000);
 
-  onAuthStateChanged(auth, async user => {
-    if (user) {
-      window._currentUid = user.uid;
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (!snap.exists()) goTo('s-nickname');
-      else showHome(snap.data(), user.uid);
-    } else {
-      window._currentUid = null;
-      goTo('s-login');
+onAuthStateChanged(auth, async user => {
+  clearTimeout(authTimeout);
+  if (user) {
+    window._currentUid = user.uid;
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists()) goTo('s-nickname');
+    else showHome(snap.data(), user.uid);
+  } else {
+    // 리다이렉트 결과 확인
+    try {
+      const result = await getRedirectResult(auth);
+      if (result && result.user) {
+        // 리다이렉트 성공 — onAuthStateChanged 재실행됨
+        return;
+      }
+    } catch(e) {
+      if (e.code !== 'auth/no-auth-event') console.warn('redirect err:', e.code);
     }
-  });
-}
-initAuth();
+    window._currentUid = null;
+    goTo('s-login');
+  }
+});
 
 window.signInWithGoogle=async()=>{
   try { await signInWithRedirect(auth, provider); }
