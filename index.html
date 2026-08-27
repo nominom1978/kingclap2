@@ -710,6 +710,7 @@ function playFp(i){
   }
   next();
 }
+window.playFp = playFp;
 
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
