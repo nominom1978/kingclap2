@@ -179,7 +179,7 @@ body {
 .dot.used { background: var(--ink-4); }
 .fp-live { margin-top: 18px; opacity: 0.9; }
 .fp-done { margin: 20px 0 32px; }
-.fp-inline { display: inline-block; vertical-align: middle; margin-left: 8px; }
+.fp-inline { display: inline-block; vertical-align: middle; margin-left: 8px; cursor: pointer; }
 
 /* value */
 #s-value { justify-content: flex-start; }
@@ -680,11 +680,35 @@ function renderInbox(list){
   const el = document.getElementById('h-inbox');
   if (!list.length){ el.innerHTML='<div class="inbox-empty">아직 받은 말이 없어요</div>'; return; }
   const recent = list.slice(-10).reverse();
-  el.innerHTML = recent.map(m=>{
-    const fpHtml = (m.fp && m.fp.length) ? '<span class="fp-inline">'+fpSvg(m.fp, FP_N, 28)+'</span>' : '';
+  window._inbox = recent;
+  el.innerHTML = recent.map((m,i)=>{
+    const hasFp = m.fp && m.fp.length;
+    const fpHtml = hasFp ? '<span class="fp-inline" id="fp-msg-'+i+'" onclick="playFp('+i+')">'+fpSvg(m.fp, FP_N, 28)+'</span>' : '';
     return '<div class="msg-card"><div class="msg-text">'+escapeHtml(m.text||'')+fpHtml+'</div>'+
     '<div class="msg-meta"><span>'+escapeHtml(m.from)+'</span><span>'+fmt(m.claps||0)+'번 · '+fmt(m.value||0)+'원</span></div></div>';
   }).join('');
+}
+
+function playFp(i){
+  const m = window._inbox[i];
+  const el = document.getElementById('fp-msg-'+i);
+  if (!m || !el) return;
+  const cells = m.fp || [];
+  const times = m.fpT || [];
+  el.innerHTML = fpSvg([], FP_N, 28);
+  let shown = [];
+  let step = 0;
+  function next(){
+    if (step >= cells.length) return;
+    shown.push(cells[step]);
+    el.innerHTML = fpSvg(shown, FP_N, 28);
+    step++;
+    if (step < cells.length){
+      const gap = Math.min(Math.max(times[step] || 0, 90), 700);
+      setTimeout(next, gap);
+    }
+  }
+  next();
 }
 
 function escapeHtml(s){
@@ -736,13 +760,14 @@ window.send = async()=>{
   if (!sel || !window._uid) return;
   const total = count*perClap, c = count, nick = sel.nickname, text = (msg||'').trim();
   const fpCells = (window._fp && window._fp.revealed) ? window._fp.revealed.slice() : [];
+  const fpTimes = (window._fp && window._fp.intervals) ? window._fp.intervals.slice() : [];
   const b = document.getElementById('send-btn');
   b.disabled=true; b.innerText='보내는 중';
   await updateDoc(doc(db,"users",window._uid), { sent: increment(c) });
   const recvUpdate = { received: increment(c), value: increment(total) };
   if (text || fpCells.length) {
     recvUpdate.messages = arrayUnion({
-      from: window._nick || '누군가', text, claps: c, value: total, fp: fpCells, at: new Date().toISOString()
+      from: window._nick || '누군가', text, claps: c, value: total, fp: fpCells, fpT: fpTimes, at: new Date().toISOString()
     });
   }
   await updateDoc(doc(db,"users",sel.uid), recvUpdate);
