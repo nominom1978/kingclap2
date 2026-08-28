@@ -207,6 +207,7 @@ body {
   transition: border-color .18s;
 }
 .search:focus { border-color: var(--ink); }
+.people-label { font-size: 11px; color: var(--ink-3); letter-spacing: 2px; text-transform: uppercase; margin: 18px 0 8px; }
 .search::placeholder { color: var(--ink-4); }
 .people { width: 100%; flex: 1; overflow-y: auto; margin-bottom: 16px; }
 .person {
@@ -327,6 +328,7 @@ body {
   <div class="head"><div class="brand">Send</div><button class="back" onclick="go('s-value')">&#8249;</button></div>
   <div class="v-sum" id="s-sum"></div>
   <input class="search" id="q" type="text" placeholder="닉네임 검색" oninput="filterPeople(this.value)" />
+  <div class="people-label" id="people-label">받은 박수 TOP 5</div>
   <div class="people" id="people"><div class="p-empty">불러오는 중</div></div>
   <button class="btn" id="send-btn" onclick="send()" disabled>받을 사람을 선택하세요</button>
 </div>
@@ -552,7 +554,7 @@ function stopMic(){
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, getDocs, arrayUnion }
+import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, getDocs, arrayUnion, query, orderBy, limit, where }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const cfg = {
@@ -719,17 +721,30 @@ function escapeHtml(s){
 function enterSend(){
   document.getElementById('s-sum').innerHTML = '<b>'+fmt(count*perClap)+'원</b>의 가치를 보낼 사람';
   document.getElementById('q').value='';
-  document.getElementById('people').innerHTML='<div class="p-empty">불러오는 중</div>';
   sel=null; lockSend();
-  loadPeople();
+  loadTop5();
 }
 window.enterSend = enterSend;
 
-async function loadPeople(){
-  const snap = await getDocs(collection(db,"users"));
-  people=[];
+async function loadTop5(){
+  document.getElementById('people-label').innerText = '받은 박수 TOP 5';
+  document.getElementById('people').innerHTML = '<div class="p-empty">불러오는 중</div>';
+  const q = query(collection(db,"users"), orderBy('received','desc'), limit(6));
+  const snap = await getDocs(q);
+  people = [];
   snap.forEach(d=>{ if(d.id!==window._uid) people.push({uid:d.id,...d.data()}); });
+  people = people.slice(0,5);
   paintPeople(people);
+}
+
+async function searchPeople(qStr){
+  document.getElementById('people-label').innerText = '검색 결과';
+  document.getElementById('people').innerHTML = '<div class="p-empty">찾는 중</div>';
+  const qy = query(collection(db,"users"), orderBy('nickname'), where('nickname','>=',qStr), where('nickname','<=',qStr+'\uf8ff'), limit(20));
+  const snap = await getDocs(qy);
+  const found = [];
+  snap.forEach(d=>{ if(d.id!==window._uid) found.push({uid:d.id,...d.data()}); });
+  paintPeople(found);
 }
 
 function paintPeople(list){
@@ -743,7 +758,12 @@ function paintPeople(list){
     '</button>').join('');
 }
 
-window.filterPeople = q => { paintPeople(people.filter(p=>p.nickname.includes(q))); sel=null; lockSend(); };
+window.filterPeople = q => {
+  const v = q.trim();
+  sel=null; lockSend();
+  if (!v) { loadTop5(); return; }
+  searchPeople(v);
+};
 
 window.pick = uid => {
   sel = people.find(p=>p.uid===uid);
